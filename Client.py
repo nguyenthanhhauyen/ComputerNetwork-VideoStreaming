@@ -1,5 +1,5 @@
 from tkinter import *
-import tkinter.messagebox
+import tkinter.messagebox as messagebox
 from PIL import Image, ImageTk
 import socket, threading, sys, traceback, os
 
@@ -12,17 +12,18 @@ class Client:
 	INIT = 0
 	READY = 1
 	PLAYING = 2
-	state = INIT
+	state = INIT #khi bam setup, Client ch co ket noi RTSP & ch mo cong RTP
 	
-	SETUP = 0
-	PLAY = 1
-	PAUSE = 2
-	TEARDOWN = 3
+	#4 loai RTSP request ma client co the gui 
+	SETUP = 0 #yeu cau server chuan bi streaming
+	PLAY = 1 #yeu cau bat dau gui goi RTP
+	PAUSE = 2 #tam dung gui goi RTP
+	TEARDOWN = 3 #ket thuc sesion, dong socket
 	
 	# Initiation..
 	def __init__(self, master, serveraddr, serverport, rtpport, filename):
 		self.master = master
-		self.master.protocol("WM_DELETE_WINDOW", self.handler)
+		self.master.protocol("WM_DELETE_WINDOW", self.handler) #overide trc khi bam nut x
 		self.createWidgets()
 		self.serverAddr = serveraddr
 		self.serverPort = int(serverport)
@@ -30,8 +31,8 @@ class Client:
 		self.fileName = filename
 		self.rtspSeq = 0
 		self.sessionId = 0
-		self.requestSent = -1
-		self.teardownAcked = 0
+		self.requestSent = -1 #ghi nho da gui lenh nao
+		self.teardownAcked = 0 #gui teardown success -> 1
 		self.connectToServer()
 		self.frameNbr = 0
 		
@@ -40,7 +41,7 @@ class Client:
 		# Create Setup button
 		self.setup = Button(self.master, width=20, padx=3, pady=3)
 		self.setup["text"] = "Setup"
-		self.setup["command"] = self.setupMovie
+		self.setup["command"] = self.setupMovie #khi bam Setup thi se thuc hien setupMovie
 		self.setup.grid(row=1, column=0, padx=2, pady=2)
 		
 		# Create Play button		
@@ -85,7 +86,7 @@ class Client:
 		"""Play button handler."""
 		if self.state == self.READY:
 			# Create a new thread to listen for RTP packets
-			threading.Thread(target=self.listenRtp).start()
+			threading.Thread(target=self.listenRtp).start() #tao thread phu de nhan goi RTP lien tuc
 			self.playEvent = threading.Event()
 			self.playEvent.clear()
 			self.sendRtspRequest(self.PLAY)
@@ -107,7 +108,7 @@ class Client:
 						self.updateMovie(self.writeFrame(rtpPacket.getPayload()))
 			except:
 				# Stop listening upon requesting PAUSE or TEARDOWN
-				if self.playEvent.isSet(): 
+				if self.playEvent.is_set(): 
 					break
 				
 				# Upon receiving ACK for TEARDOWN request,
@@ -138,7 +139,7 @@ class Client:
 		try:
 			self.rtspSocket.connect((self.serverAddr, self.serverPort))
 		except:
-			tkMessageBox.showwarning('Connection Failed', 'Connection to \'%s\' failed.' %self.serverAddr)
+			messagebox.showwarning('Connection Failed', 'Connection to \'%s\' failed.' %self.serverAddr)
 	
 	def sendRtspRequest(self, requestCode):
 		"""Send RTSP request to the server."""	
